@@ -22,7 +22,7 @@ TODO:give a similarity score for each sentence by comparing it with the email su
 '''  
 #   undone 
 def get_subject_similarity(text):
-    return 10
+    return 0
 '''
 Look bc3 corpus xml file into sqllite
 @author: Kevin Zhao
@@ -242,16 +242,19 @@ def feature_extraction():
         f_sentence_subject_similarity = row[5]
         sentence_extracted = row[6]
         f_sentence_sa_tag = row[7]
+        f_sentence_sa_tag_list = f_sentence_sa_tag.split("#")
+        
         f_sentence_sentiment = row[8]
         #TODO : features to be extracted
         f_sentence_thread_line_number = row[9]   #sentence position in whole thread            #Luming
-        f_sentence_relative_thread_line_num = f_sentence_thread_line_number/total_sentence_no  #Luming
-        f_sentence_centroid_similarity= ""
-        f_sentence_local_centroid_similarity=""
+        f_sentence_relative_thread_line_num = float(f_sentence_thread_line_number)/float(total_sentence_no)#Luming#@author: kevin ---add float() precision
+        
+        f_sentence_centroid_similarity= 0
+        f_sentence_local_centroid_similarity=0
         f_sentence_tfidf_sum = row[10]                                                         #Luming
         f_sentence_tfidf_avg = row[11]                                                         #Luming
         f_sentence_email_number = email_id               #=email ID                            #Luming
-        f_sentence_relative_email_number = email_id/total_email_no    #email ID/sum of email   #Luming
+        f_sentence_relative_email_number = float(email_id)/float(total_email_no)    #email ID/sum of email   #Luming#@author: kevin ---add float() precision
         
         # get number of replies                                                                #Yuan & Luming
         # MODIFIED BY Luming                                                                   
@@ -262,7 +265,7 @@ def feature_extraction():
             f_sentence_recipients_number = row_in_email_table[1]                               #Luming
         
         #insert feature data into database
-        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,f_sentence_sa_tag))
+        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,len(f_sentence_sa_tag_list)-1))
    
     # Save (commit) the changes
     conn.commit()
