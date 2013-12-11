@@ -73,6 +73,7 @@ NOTE:
 		b)output: from 0 to 1 in float
 		c)Perform bigram comparison between two strings and return a percentage match in decimal form
 			similarity = [2*(matches)]/[len(subject_string)+(sentence_string)]
+			more info here:http://www.catalysoft.com/articles/StrikeAMatch.html
 	(2)Speech act tag @author:Kevin
 		
 	(3)TFIDF @author:Luming
