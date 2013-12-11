@@ -1,0 +1,13 @@
+To: sean@digitome.com
+From: paul@digitome.com
+Reply-To: Majordomo@allrealgood.com, nieluming lumingnie@gmail.com
+Subject: Parsing e-mail headers
+Cc: xiaoming@gmail.com, helloworld@yahoo.com
+Message-Id: <199902051120.EAA14648@digitome.com>
+
+Sean,
+
+Can Python parse this?
+
+regards,
+Paul
