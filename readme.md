@@ -67,7 +67,16 @@ NOTE:
 	/src/sentiment/topia 
 	--- Content Term Extraction using POS Tagging
 
-
+#Implementation Note
+	(1)Subject similarity @author:Kevin
+		a)input: subject_string,sentence_string
+		b)output: from 0 to 1 in float
+		c)Perform bigram comparison between two strings and return a percentage match in decimal form
+			similarity = [2*(matches)]/[len(subject_string)+(sentence_string)]
+	(2)Speech act tag @author:Kevin
+		
+	(3)TFIDF @author:Luming
+	(4)......
 #DataBase Design
 
 	* thread 

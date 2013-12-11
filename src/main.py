@@ -1,3 +1,4 @@
+from __future__ import division
 import xml.etree.ElementTree as ET
 import sqlite3
 import os
@@ -9,7 +10,6 @@ import re
 from collections import Counter
 import math
 #   import "division" from "__future__" to enforce every division result is a floating number
-from __future__ import division
 
 
 #   NLTK tools for feature extracting
@@ -23,9 +23,31 @@ bc3_annotation_xml_doc = ET.parse('../bc3/annotation.xml')
 TODO:give a similarity score for each sentence by comparing it with the email subject 
 @author: Kevin Zhao
 '''  
-#   undone 
-def get_subject_similarity(text):
-    return 0
+'''
+    Takes a string and returns a list of bigrams
+    @author: Kevin Zhao
+'''
+def get_bigrams(string):
+    
+    s = string.lower()
+    return [s[i:i + 2] for i in xrange(len(s) - 1)]
+'''
+    Perform bigram comparison between two strings
+    and return a percentage match in decimal form
+    @author: Kevin Zhao
+'''
+def get_subject_similarity(subject_text, sentence_text):
+    
+    pairs1 = get_bigrams(subject_text)
+    pairs2 = get_bigrams(sentence_text)
+    union = len(pairs1) + len(pairs2)
+    hit_count = 0
+    for x in pairs1:
+        for y in pairs2:
+            if x == y:
+                hit_count += 1
+                break
+    return (2.0 * hit_count) / union
 '''
 Look bc3 corpus xml file into sqllite
 @author: Kevin Zhao
@@ -80,7 +102,7 @@ def load_bc3_corpus():
             email_words_list = []
             for sentence_node in email_node.findall('.//Text/Sent'):
                 string = sentence_node.text
-                wordList = re.sub("[^\w]", " ",  string).split()
+                wordList = re.sub("[^\w]", " ", string).split()
                 thread_sent_list.append(wordList)
                 for word in wordList:
                     email_words_list.append(word)
@@ -111,7 +133,7 @@ def load_bc3_corpus():
                     from_who_email = from_who[from_who.index("<") + 1:from_who.rindex(">")]
                     # then we can use the 'from_who_email' to compare with the string of 'email_node_for_num_replies'
                     if from_who_email in to_whom_for_num_replies:
-                        number_of_replies=number_of_replies+1;
+                        number_of_replies = number_of_replies + 1;
                 except TypeError as e:
                         print e
                         
@@ -132,7 +154,7 @@ def load_bc3_corpus():
             email_words_list = []
             for sentence_node in email_node.findall('.//Text/Sent'):
                 string = sentence_node.text
-                wordList = re.sub("[^\w]", " ",  string).split()
+                wordList = re.sub("[^\w]", " ", string).split()
                 for word in wordList:
                     email_words_list.append(word)
             # now email_words_list is composed of all words in the email -- to be used for tf
@@ -145,7 +167,7 @@ def load_bc3_corpus():
                 sentiment_score = sentimentAnalysis(sentence_text)
                 
                 # calculate the "sum tf-idf" and "avg tf-idf" value of a sentence here:
-                sentence_words_list = re.sub("[^\w]", " ",  sentence_text).split()
+                sentence_words_list = re.sub("[^\w]", " ", sentence_text).split()
                 word_freq_sentence_dict = Counter(sentence_words_list)
                 word_freq_thread_dict = Counter(pure_wordslist_thread)
                 sentence_len = len(sentence_words_list)
@@ -160,14 +182,14 @@ def load_bc3_corpus():
                         if word in sent:
                             no_sent_with_word = no_sent_with_word + 1
                     #   the below function should be modified to "idf = log(num_sent_in_thread / num_sent_with_word_in_thread)"
-                    idf_word = math.log(total_no_sent_thread/no_sent_with_word)
+                    idf_word = math.log(total_no_sent_thread / no_sent_with_word)
                     
-                    sentence_tfidf_sum = sentence_tfidf_sum + tf_word*idf_word
+                    sentence_tfidf_sum = sentence_tfidf_sum + tf_word * idf_word
                 
-                sentence_tfidf_avg = sentence_tfidf_sum/(sentence_len+1)
+                sentence_tfidf_avg = sentence_tfidf_sum / (sentence_len + 1)
 
                 # Insert a row of data in sentence_node table, Luming added: "total_sentence_no"
-                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_no, email_no, thread_list_no, sentence_text, len(sentence_text), get_subject_similarity(sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), "", sentiment_score, total_sentence_position, sentence_tfidf_sum, sentence_tfidf_avg))
+                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_no, email_no, thread_list_no, sentence_text, len(sentence_text), get_subject_similarity(email_subject, sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), "", sentiment_score, total_sentence_position, sentence_tfidf_sum, sentence_tfidf_avg))
                 sentence_no = sentence_no + 1
                 #total sentence number
                 total_sentence_position = total_sentence_position + 1
@@ -243,7 +265,7 @@ def feature_extraction():
     f_sentence_sentiment = ""
     
     db_cursor = conn.execute("SELECT *  FROM sentence")
-    db_insert_cursor= conn.cursor()
+    db_insert_cursor = conn.cursor()
     for row in db_cursor:
         sentence_id = row[0]
         email_id = row[1]
@@ -265,25 +287,25 @@ def feature_extraction():
         f_sentence_sentiment = row[8]
         #TODO : features to be extracted
         f_sentence_thread_line_number = row[9]   #sentence position in whole thread            #Luming
-        f_sentence_relative_thread_line_num = float(f_sentence_thread_line_number)/float(total_sentence_no)#Luming#@author: kevin ---add float() precision
+        f_sentence_relative_thread_line_num = float(f_sentence_thread_line_number) / float(total_sentence_no)#Luming#@author: kevin ---add float() precision
         
-        f_sentence_centroid_similarity= 0
-        f_sentence_local_centroid_similarity=0
+        f_sentence_centroid_similarity = 0
+        f_sentence_local_centroid_similarity = 0
         f_sentence_tfidf_sum = row[10]                                                         #Luming
         f_sentence_tfidf_avg = row[11]                                                         #Luming
         f_sentence_email_number = email_id               #=email ID                            #Luming
-        f_sentence_relative_email_number = float(email_id)/float(total_email_no)    #email ID/sum of email   #Luming#@author: kevin ---add float() precision
+        f_sentence_relative_email_number = float(email_id) / float(total_email_no)    #email ID/sum of email   #Luming#@author: kevin ---add float() precision
         
         # get number of replies                                                                #Yuan & Luming
         # MODIFIED BY Luming                                                                   
         # select num_replies as well as num_recipients here and assign them accordingly
-        email_db_cursor = conn.execute("SELECT num_replies,num_recipients FROM email WHERE id =? and thread_id = ?",(email_id,thread_id))
+        email_db_cursor = conn.execute("SELECT num_replies,num_recipients FROM email WHERE id =? and thread_id = ?", (email_id, thread_id))
         for row_in_email_table in email_db_cursor:
             f_sentence_reply_number = row_in_email_table[0]                                    #Yuan
             f_sentence_recipients_number = row_in_email_table[1]                               #Luming
         
         #insert feature data into database
-        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,len(f_sentence_sa_tag_list)-1))
+        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id, email_id, thread_id, sentence_extracted, f_sentence_length, f_sentence_sentiment, f_sentence_thread_line_number, f_sentence_relative_thread_line_num, f_sentence_centroid_similarity, f_sentence_local_centroid_similarity, f_sentence_tfidf_sum, f_sentence_tfidf_avg, f_sentence_email_number, f_sentence_relative_email_number, f_sentence_subject_similarity, f_sentence_reply_number, f_sentence_recipients_number, len(f_sentence_sa_tag_list) - 1))
    
     # Save (commit) the changes
     conn.commit()
@@ -306,6 +328,8 @@ def main():
     
     print "2.Feature extraction..."
     feature_extraction()
+    
+    print "Done!"
     
 if __name__ == "__main__":
     main()
