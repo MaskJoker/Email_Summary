@@ -8,6 +8,9 @@ import re
 #   Counter is used to calculate the frequency of a word in threads and emails
 from collections import Counter
 import math
+#   import "division" from "__future__" to enforce every division result is a floating number
+from __future__ import division
+
 
 #   NLTK tools for feature extracting
 #   import nltk
@@ -51,6 +54,8 @@ def load_bc3_corpus():
     # Get the root node in the xml file
     xml_root_node = bc3_corpus_xml_doc.getroot()
     #iterate through all the "thread_node" tags
+    
+
     for thread_node in xml_root_node:
         subject = thread_node[0].text
         thread_list_no = thread_node[1].text
@@ -67,18 +72,27 @@ def load_bc3_corpus():
         # calculate sum tf-idf and average tf-idf of every sentence
         # below thread_words_list is a list of lists in which every email is a list of words:
         thread_words_list = []
+        # below thread_sent_list is the list of sentences in a thread
+        thread_sent_list = []
+        # below is a pure "list of words" in a thread
+        pure_wordslist_thread = []
         for email_node in thread_node.findall('.//DOC'):
             email_words_list = []
             for sentence_node in email_node.findall('.//Text/Sent'):
                 string = sentence_node.text
                 wordList = re.sub("[^\w]", " ",  string).split()
+                thread_sent_list.append(wordList)
                 for word in wordList:
                     email_words_list.append(word)
+                    pure_wordslist_thread.append(word)
             thread_words_list.append(email_words_list)
         # now thread_words_list is composed of all emails with every email as a sub-list -- to be used for idf
         # below is the total number of emails in a thread:
         total_no_emails_thread = len(thread_words_list)
+        # total number of sentences in a thread
+        total_no_sent_thread = len(thread_sent_list)
         
+
         for email_node in thread_node.findall('.//DOC'):
             from_who = email_node[1].text
             to_whom = email_node[2].text
@@ -132,17 +146,21 @@ def load_bc3_corpus():
                 
                 # calculate the "sum tf-idf" and "avg tf-idf" value of a sentence here:
                 sentence_words_list = re.sub("[^\w]", " ",  sentence_text).split()
+                word_freq_sentence_dict = Counter(sentence_words_list)
+                word_freq_thread_dict = Counter(pure_wordslist_thread)
                 sentence_len = len(sentence_words_list)
                 
                 sentence_tfidf_sum = 0
                 for word in sentence_words_list:
-                    tf_word = word_freq_email_dict[word]/total_no_words_email
-                    # count the number of emails containing "word" in the thread:
-                    no_emails_with_word = 0
-                    for email in thread_words_list:
-                        if word in email:
-                            no_emails_with_word = no_emails_with_word + 1
-                    idf_word = math.log(total_no_emails_thread/no_emails_with_word)
+                    #   modified below: the "tf" value now becomes the number of words in a sentence rather than the (number of words)/(total number of words in email)
+                    tf_word = word_freq_sentence_dict[word]
+                    # count the number of sentences containing "word" in the thread:
+                    no_sent_with_word = 0
+                    for sent in thread_sent_list:
+                        if word in sent:
+                            no_sent_with_word = no_sent_with_word + 1
+                    #   the below function should be modified to "idf = log(num_sent_in_thread / num_sent_with_word_in_thread)"
+                    idf_word = math.log(total_no_sent_thread/no_sent_with_word)
                     
                     sentence_tfidf_sum = sentence_tfidf_sum + tf_word*idf_word
                 
